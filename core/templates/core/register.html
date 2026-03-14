@@ -1,0 +1,55 @@
+{% extends "core/base.html" %}
+{% block title %}Ro'yxatdan o'tish{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card" data-aos="zoom-in" data-aos-duration="600">
+        <h2>Ro'yxatdan o'tish</h2>
+        <p class="subtitle">ILMS platformasiga a'zo bo'ling</p>
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div class="form-group" style="text-align: left; margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; color: #e0f2f7; font-size: 0.9rem;">
+                        {% if field.name == "username" %}
+                            Foydalanuvchi nomi
+                        {% elif field.name == "password1" %}
+                            Parol
+                        {% elif field.name == "password2" %}
+                            Parolni tasdiqlash
+                        {% else %}
+                            {{ field.label }}
+                        {% endif %}
+                    </label>
+                    
+                    {{ field }}
+                    
+                    {% if field.help_text %}
+                        <small class="helptext" style="font-size: 0.7rem; color: #8bbdd9; display: block; margin-top: 4px;">
+                            {% if field.name == "username" %}
+                                Kamida 150 belgi, harf va raqamlar.
+                            {% elif "password" in field.name %}
+                                Parol murakkab bo'lishi shart.
+                            {% else %}
+                                {{ field.help_text }}
+                            {% endif %}
+                        </small>
+                    {% endif %}
+                    
+                    {% for error in field.errors %}
+                        <p style="color: #ff6b6b; font-size: 0.8rem; margin-top: 4px;">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="auth-btn">Ro'yxatdan o'tish</button>
+        </form>
+        
+        <p class="bottom-link">
+            Akkauntingiz bormi? <a href="{% url 'core:login' %}">Kirish</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "core/base.html" %}
+{% block title %}ILMS Platformasi - Bosh sahifa{% endblock %}
+
+{% block content %}
+  <div class="main-content">
+    <h1 class="main-title" data-aos="fade-down">ILMS Platformasi</h1>
+    <p class="main-subtitle" data-aos="fade-up" data-aos-delay="200">
+      Interactive Learning Management System
+    </p>
+  </div>
+
+  <div class="card-container">
+    <a href="{% url 'files:list' %}" class="card-link" data-aos="fade-up" data-aos-delay="300">
+      <div class="card"><h2>Info Dars</h2></div>
+    </a>
+    <a href="{% url 'adaptive:course_list' %}" class="card-link" data-aos="fade-up" data-aos-delay="400">
+      <div class="card"><h2>Adaptiv O'qitish</h2></div>
+    </a>
+    <a href="{% url 'neural:path_list' %}" class="card-link" data-aos="fade-up" data-aos-delay="500">
+      <div class="card"><h2>Neyroset O'qitish</h2></div>
+    </a>
+    <a href="{% url 'elementar:lesson_list' %}" class="card-link" data-aos="fade-up" data-aos-delay="600">
+      <div class="card"><h2>Elementar O'qitish</h2></div>
+    </a>
+    <a href="{% url 'quiz:home' %}" class="card-link" data-aos="fade-up" data-aos-delay="700">
+      <div class="card"><h2>Test Tizimi</h2></div>
+    </a>
+  </div>
+{% endblock %}

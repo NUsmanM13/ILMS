@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ element.title }} - Adaptive</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Body balandligini ekranga tenglaymiz va asosiy scrollni o'chiramiz */
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #ffffff; 
+            color: #1e293b; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+        /* Sidebar o'zining ichida scroll bo'lishi uchun */
+        .sidebar { 
+            height: 100vh; 
+            overflow-y: auto; 
+            background: #fbfcfd; 
+            border-right: 1px solid #f1f5f9; 
+        }
+        /* Asosiy kontent o'zining ichida scroll bo'lishi uchun */
+        .content-area { 
+            height: 100vh; 
+            overflow-y: auto; 
+            scroll-behavior: smooth;
+        }
+        .locked { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
+        .active-step { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; border-radius: 12px; color: #2563eb; }
+        
+        /* Scrollbar dizayni */
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+        .progress-line { position: absolute; left: 23px; top: 35px; bottom: -15px; width: 2px; background: #e2e8f0; }
+        .element-item:last-child .progress-line { display: none; }
+    </style>
+</head>
+<body class="flex text-slate-900">
+
+    <!-- Sidebar -->
+    <aside class="w-80 sidebar shrink-0 p-6 hidden lg:block">
+        <div class="mb-10 flex items-center gap-3 px-2">
+            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200">
+                <i class="fas fa-layer-group text-xs"></i>
+            </div>
+            <h2 class="font-extrabold text-xl tracking-tight">Adaptive <span class="text-blue-600"></span></h2>
+        </div>
+
+        <nav class="space-y-2">
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-4">Kurs Mazmuni</p>
+            {% for item in sidebar_data %}
+            <div class="{% if item.is_locked %}locked{% endif %}">
+                <a href="{% url 'adaptive:element_detail' item.id %}" 
+                   class="flex items-center gap-3 p-3 transition-all text-sm font-medium {% if item.is_active %}active-step{% else %}text-slate-500 hover:bg-slate-50 rounded-xl{% endif %}">
+                    <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 
+                        {% if item.is_completed %} bg-emerald-100 text-emerald-600 {% elif item.is_active %} bg-blue-600 text-white {% else %} bg-slate-100 text-slate-400 {% endif %}">
+                        {% if item.is_completed %}
+                            <i class="fas fa-check text-[10px]"></i>
+                        {% elif item.is_locked %}
+                            <i class="fas fa-lock text-[10px]"></i>
+                        {% else %}
+                            {{ forloop.counter }}
+                        {% endif %}
+                    </div>
+                    <span class="truncate">{{ item.title }}</span>
+                </a>
+            </div>
+            {% endfor %}
+        </nav>
+    </aside>
+
+    <!-- Content (Scroll shu yerda bo'ladi) -->
+    <main class="flex-1 content-area bg-white">
+        <!-- Minimal Top Nav -->
+        <header class="h-16 px-12 flex items-center justify-between border-b border-slate-50 sticky top-0 bg-white/90 backdrop-blur-lg z-20">
+            <a href="{% url 'adaptive:course_list' %}" class="text-xs font-bold text-slate-400 hover:text-blue-600 transition-colors">
+                <i class="fas fa-chevron-left mr-2"></i> Darslarga qaytish
+            </a>
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-bold">{{ user.username }}</span>
+                <div class="w-8 h-8 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold text-[10px]">
+                    {{ user.username|first|upper }}
+                </div>
+            </div>
+        </header>
+
+        <div class="max-w-3xl mx-auto py-16 px-6">
+            <div class="mb-10">
+                <span class="text-xs font-bold text-blue-600 uppercase tracking-[0.2em] mb-4 block">Modul: {{ element.module.title }}</span>
+                <h1 class="text-5xl font-black tracking-tighter text-slate-900 leading-tight">{{ element.title }}</h1>
+            </div>
+
+            {% if embed_url %}
+            <div class="aspect-video rounded-[2.5rem] overflow-hidden bg-slate-100 mb-12 shadow-2xl shadow-blue-100/20">
+                <iframe class="w-full h-full" src="{{ embed_url }}" frameborder="0" allowfullscreen></iframe>
+            </div>
+            {% endif %}
+
+            <!-- Matn qismi -->
+            <article class="prose prose-slate max-w-none text-slate-600 text-lg leading-relaxed mb-16">
+                {{ element.content|safe }}
+            </article>
+
+            <!-- Quiz Section -->
+            <div class="bg-slate-50 border border-slate-100 rounded-[3rem] p-10 mt-20 mb-20">
+                <div class="flex items-center gap-4 mb-10">
+                    <div class="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-xl">
+                        <i class="fas fa-bolt text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold">Bilimni sinash</h3>
+                        <p class="text-sm text-slate-400">Keyingi darsga o'tish uchun javobni bering.</p>
+                    </div>
+                </div>
+
+                {% if test_passed %}
+                    <div class="flex items-center gap-5 bg-emerald-50 p-8 rounded-3xl border border-emerald-100 text-emerald-700">
+                        <i class="fas fa-award text-3xl"></i>
+                        <div>
+                            <p class="font-bold text-lg">Muvaffaqiyatli!</p>
+                            <p class="text-sm opacity-80">Siz ushbu bosqichni yakunladingiz, keyingi dars ochildi.</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <form method="POST" class="space-y-4">
+                        {% csrf_token %}
+                        <p class="text-lg font-bold text-slate-800 mb-8">{{ element.quiz.text }}</p>
+                        <div class="grid gap-3">
+                            {% for i in "1234" %}
+                            <label class="group flex items-center gap-4 p-5 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:border-blue-600 transition-all">
+                                <input type="radio" name="option" value="{{ forloop.counter }}" class="w-4 h-4 text-blue-600">
+                                <span class="text-sm font-semibold text-slate-600 group-hover:text-blue-600">
+                                    {% if i == "1" %}{{ element.quiz.option1 }}{% elif i == "2" %}{{ element.quiz.option2 }}{% elif i == "3" %}{{ element.quiz.option3 }}{% else %}{{ element.quiz.option4 }}{% endif %}
+                                </span>
+                            </label>
+                            {% endfor %}
+                        </div>
+
+                        {% if error %}
+                            <p class="text-red-500 text-sm font-bold mt-4 flex items-center gap-2">
+                                <i class="fas fa-info-circle"></i> {{ error }}
+                            </p>
+                        {% endif %}
+
+                        <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold text-sm mt-8 hover:bg-blue-600 transition-all shadow-xl shadow-slate-200">
+                            Javobni tasdiqlash
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

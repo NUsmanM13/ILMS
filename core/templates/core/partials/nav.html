@@ -1,0 +1,15 @@
+<nav class="navbar">
+  <a href="{% url 'core:home' %}" class="brand">
+    <div class="brand-badge">IL</div>
+    ILMS
+  </a>
+  <div class="nav-links">
+    {% if request.user.is_authenticated %}
+      <span class="nav-user">{{ request.user.username }}</span>
+      <a href="{% url 'core:logout' %}" class="nav-btn primary">Chiqish</a>
+    {% else %}
+      <a href="{% url 'core:login' %}" class="nav-btn">Kirish</a>
+      <a href="{% url 'core:register' %}" class="nav-btn primary">Ro'yxatdan o'tish</a>
+    {% endif %}
+  </div>
+</nav>

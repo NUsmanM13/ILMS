@@ -1,0 +1,21 @@
+{% extends "core/base.html" %}
+{% block title %}Tizimga kirish{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-card" data-aos="zoom-in" data-aos-duration="600">
+        <h2>Xush kelibsiz!</h2>
+        <p class="subtitle">Platformaga kirish uchun ma'lumotlaringizni kiriting</p>
+        
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="auth-btn">Kirish</button>
+        </form>
+        
+        <p class="bottom-link">
+            Akkauntingiz yo'qmi? <a href="{% url 'core:register' %}">Ro'yxatdan o'tish</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #fcfcfd; }
+        .nav-glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border-bottom: 1px solid #f1f5f9; }
+    </style>
+</head>
+<body class="text-slate-900">
+
+    <!-- Premium Navbar -->
+    <nav class="nav-glass sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+            <a href="{% url 'files:list' %}" class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                    <i class="fas fa-folder-open text-white text-sm"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight">EduFiles</span>
+            </a>
+
+            <div class="flex items-center gap-6">
+                <div class="hidden md:flex items-center gap-3 text-sm font-medium border-r pr-6 border-slate-200">
+                    <span class="text-slate-500">Foydalanuvchi:</span>
+                    <span class="text-blue-600">{{ user.username }}</span>
+                </div>
+                <a href="{% url 'logout' %}" class="text-sm font-semibold text-red-500 hover:bg-red-50 px-4 py-2 rounded-full transition-all">
+                    Chiqish <i class="fas fa-arrow-right-from-bracket ml-1"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <main class="max-w-6xl mx-auto px-6 py-10">
+        {% block content %}{% endblock %}
+    </main>
+
+</body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ folder.name }} - ILMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #0d2c40; color: #fff; min-height: 100vh; }
+        .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .input-glass { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); color: white; }
+        .input-glass:focus { border-color: #007bff; outline: none; background: rgba(255, 255, 255, 0.07); }
+        .btn-primary { background: #007bff; box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3); transition: all 0.3s; }
+        .btn-primary:hover { background: #0056b3; transform: translateY(-2px); }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Back Link -->
+        <a href="{% url 'files:list' %}" class="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 mb-8 transition-all text-sm font-semibold">
+            <i class="fas fa-chevron-left text-[10px]"></i> Fayllar ro'yxatiga qaytish
+        </a>
+
+        <!-- Header Card -->
+        <div class="glass rounded-[2.5rem] p-8 md:p-12 mb-10 relative overflow-hidden">
+            <div class="relative z-10">
+                <span class="bg-blue-500/20 text-blue-400 text-[10px] font-bold px-4 py-1.5 rounded-full border border-blue-500/30 uppercase tracking-widest mb-4 inline-block">Mavzu tafsilotlari</span>
+                <h1 class="text-4xl font-bold mb-4">{{ folder.name }}</h1>
+                <p class="text-blue-100/60 max-w-2xl leading-relaxed">{{ folder.description }}</p>
+            </div>
+            <i class="fas fa-graduation-cap absolute -right-10 -bottom-10 text-[15rem] text-white/5 rotate-12"></i>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+            <!-- Materiallar (Admin yuklagan) -->
+            <div class="lg:col-span-7 space-y-6">
+                <h2 class="text-xl font-bold flex items-center gap-3">
+                    <span class="w-1.5 h-6 bg-blue-500 rounded-full"></span> Papka materiallari
+                </h2>
+                
+                <div class="grid gap-4">
+                    {% for mat in materials %}
+                    <div class="glass p-5 rounded-2xl flex items-center justify-between group hover:border-blue-500/50 transition-all">
+                        <div class="flex items-center gap-4">
+                            <div class="w-12 h-12 {% if mat.is_assignment %}bg-amber-500/10 text-amber-500{% else %}bg-blue-500/10 text-blue-500{% endif %} rounded-xl flex items-center justify-center border border-white/5">
+                                <i class="fas {% if mat.is_assignment %}fa-star{% else %}fa-file-lines{% endif %}"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-sm">{{ mat.title }}</h4>
+                                <p class="text-[10px] text-white/30 uppercase font-bold mt-1">
+                                    {% if mat.is_assignment %}Uyga vazifa{% else %}Darslik / PDF{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <a href="{{ mat.file.url }}" class="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center hover:bg-blue-600 transition-all text-white/50 hover:text-white">
+                            <i class="fas fa-download text-sm"></i>
+                        </a>
+                    </div>
+                    {% empty %}
+                    <p class="text-white/20 italic text-sm">Materiallar hali yuklanmagan.</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Vazifa topshirish (User uchun) -->
+            <div class="lg:col-span-5 space-y-6">
+                <h2 class="text-xl font-bold flex items-center gap-3">
+                    <span class="w-1.5 h-6 bg-emerald-500 rounded-full"></span> Vazifa topshirish
+                </h2>
+
+                {% if not user.is_staff %}
+                <div class="glass p-8 rounded-3xl border-emerald-500/20">
+                    <form method="POST" enctype="multipart/form-data" class="space-y-4">
+                        {% csrf_token %}
+                        <div class="input-glass rounded-2xl p-6 text-center border-dashed border-2 hover:border-emerald-500/50 transition-all cursor-pointer relative">
+                            <input type="file" name="homework_file" required class="absolute inset-0 opacity-0 cursor-pointer">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-emerald-500/50 mb-2"></i>
+                            <p class="text-xs font-medium text-white/60">Faylni tanlang yoki shu yerga tashlang</p>
+                        </div>
+                        <textarea name="comment" placeholder="Izoh qoldiring..." rows="2" class="w-full input-glass rounded-xl p-4 text-sm"></textarea>
+                        <button type="submit" name="submit_homework" class="w-full btn-primary py-4 rounded-xl font-bold text-sm tracking-wide">
+                            Vazifani yuborish
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+
+                <!-- Topshirilganlar (Submissions) -->
+                <div class="space-y-3">
+                    <p class="text-[10px] font-bold text-white/20 uppercase tracking-[0.3em] ml-2">Javoblar</p>
+                    {% for sub in submissions %}
+                    <div class="bg-white/5 border border-white/5 p-4 rounded-2xl flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center text-[10px]">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold">{{ sub.user.username }}</p>
+                                <p class="text-[9px] text-white/30 uppercase tracking-tighter">{{ sub.uploaded_at|date:"d M, H:i" }}</p>
+                            </div>
+                        </div>
+                        <a href="{{ sub.file.url }}" class="text-white/20 hover:text-blue-400 transition-colors"><i class="fas fa-external-link-alt text-xs"></i></a>
+                    </div>
+                    {% empty %}
+                    <p class="text-white/20 text-center text-xs py-10 glass rounded-2xl border-dashed">Hali javoblar yo'q</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
