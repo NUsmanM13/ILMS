@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Sertifikat - ILMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Great+Vibes&family=Plus+Jakarta+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { background: #f1f5f9; padding: 50px; display: flex; flex-direction: column; align-items: center; }
+        .cert-border {
+            width: 1000px; height: 700px; padding: 20px;
+            background: #fff; border: 15px solid #0d2c40;
+            position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        }
+        .cert-content {
+            border: 5px solid #0d2c40; height: 100%; width: 100%;
+            padding: 50px; text-align: center; display: flex; flex-direction: column; align-items: center;
+        }
+        .cert-title { font-family: 'Cinzel', serif; color: #0d2c40; font-size: 60px; margin-bottom: 20px; }
+        .student-name { font-family: 'Great Vibes', cursive; font-size: 70px; color: #3b82f6; margin: 20px 0; }
+        .watermark { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 200px; opacity: 0.03; z-index: 0; pointer-events: none; }
+        
+        @media print {
+            .no-print { display: none; }
+            body { background: white; padding: 0; }
+            .cert-border { box-shadow: none; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <button onclick="window.print()" class="no-print mb-8 bg-blue-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-blue-700 transition-all">
+        Sertifikatni chop etish / PDF saqlash
+    </button>
+
+    <div class="cert-border">
+        <div class="watermark">ILMS</div>
+        <div class="cert-content">
+            <p class="text-blue-600 font-bold tracking-[0.5em] uppercase mb-4">Muvaffaqiyat Sertifikati</p>
+            <h1 class="cert-title">CERTIFICATE</h1>
+            <p class="text-slate-500 italic text-xl">Ushbu sertifikat bilan tasdiqlanadi:</p>
+            
+            <h2 class="student-name">{{ user.get_full_name|default:user.username }}</h2>
+            
+            <p class="max-w-2xl text-slate-600 leading-relaxed text-lg">
+                ILMS Platformasidagi barcha dars modullari, amaliy topshiriqlar va nazorat imtihonlarini muvaffaqiyatli yakunlab, 
+                umumiy <b>{{ total_mastery }}%</b> o'zlashtirish ko'rsatkichini qayd etganligi uchun berildi.
+            </p>
+
+            <div class="mt-16 flex justify-between w-full px-20">
+                <div class="text-center">
+                    <p class="border-b-2 border-slate-900 w-48 mb-2"></p>
+                    <p class="text-xs font-bold uppercase">Sana: {{ date|date:"d.m.Y" }}</p>
+                </div>
+                <div class="text-center">
+                    <div class="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-2 border-2 border-blue-600 mx-auto">
+                        <span class="font-black text-blue-600">ILMS</span>
+                    </div>
+                    <p class="text-[10px] font-bold uppercase">Tasdiqlangan</p>
+                </div>
+                <div class="text-center">
+                    <p class="border-b-2 border-slate-900 w-48 mb-2"></p>
+                    <p class="text-xs font-bold uppercase">Platforma Ma'muriyati</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -7,6 +7,11 @@
   <title>{% block title %}ILMS Platformasi{% endblock %}</title>
 
   <!-- AOS CSS -->
+   <!-- Agar ikonkangiz bo'lsa, yo'lini ko'rsating -->
+<link rel="icon" type="image/x-icon" href="{% static 'core/img/favicon.ico' %}">
+
+<!-- Agar ikonka qo'yishni xohlamasangiz, xatoni yo'qotish uchun dummy link -->
+<link rel="icon" href="data:,">
   <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
 
   <!-- Google Fonts -->
@@ -424,64 +429,48 @@
   <script src="https://cdn.jsdelivr.net/npm/tsparticles@1.34.1/dist/tsparticles.min.js"></script>
 
   <script>
-    function getCookie(name) {
-      let cookieValue = null;
-      if (document.cookie && document.cookie !== '') {
+    /**
+ * ILMS Platformasi - Asosiy JavaScript moduli
+ */
+
+// 1. Foydali funksiyalar (Utilities)
+const getCookie = (name) => {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
         const cookies = document.cookie.split(';');
         for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          if (cookie.substring(0, name.length + 1) === (name + '=')) {
-            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-            break;
-          }
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
         }
-      }
-      return cookieValue;
     }
+    return cookieValue;
+};
 
-    document.addEventListener('DOMContentLoaded', () => {
-      // Animatsiyalarni yoqish
-      AOS.init({ duration: 800, once: true });
+// 2. Chatbot mantiqi
+const initChatbot = () => {
+    const chatLog = document.getElementById('chat-log');
+    const userInput = document.getElementById('user-input');
+    const sendButton = document.getElementById('send-button');
+    const openBtn = document.getElementById('openBtn');
+    const closeBtn = document.getElementById('closeBtn');
+    const chatbotWindow = document.getElementById('chatbotWindow'); // Yangi ID nomingizga moslandi
+    const chatbotDiv = document.querySelector('.chatbot-div');
 
-      // Zarrachalar effektini yoqish
-      if (window.tsParticles) {
-        tsParticles.load("particles-container", {
-          fpsLimit: 60,
-          particles: {
-            number: { value: 25, density: { enable: true, area: 800 } },
-            shape: {
-              type: "image",
-              image: [
-                { src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJpY29uIGljb24tdGFibGVyIGljb24tdGFibGVyLWJvb2stMiI+PHBhdGggc3Ryb2tlPSJub25lIiBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIj48L3BhdGg+PHBhdGggZD0iTTE5IDQuNTVhMi43IDEuNDUgMCAwIDAtMi43IC0uNTUgMi43IDEuNDUgMCAwIDAtMi43IC41NSAuNjg0LjY4NCAwIDAgMC0uMzUgMS40NWg1Ljc4MWEuNjkuNiAwIDAgMC0uMzUtMS40NXoiIC8+PHBhdGggZD0iTTggNGEyLjQgMS4yIDAgMCAxIDAgMi40IDIuNCAxLjIgMCAwIDEgMC0yLjQyIiAvPjxwYXRoIGQ9Ik0xMiA2aDIgYSBMMjAgNnYxMEExIDEgMCAwIDEgMTkgMTcgSDVhMSAxIDAgMCAxLTEtMVY3YTIgMiAwIDAgMSA0IDBoMiIvPjwvc3ZnPg==" },
-                { src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJpY29uIGljb24tdGFibGVyIGljb24tdGFibGVyLXBlbmNpbCI+PHBhdGggc3Ryb2tlPSJub25lIiBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIj48L3BhdGg+PHBhdGggZD0iTTQgMjAuNDAzbDEwLjItMTAuMiAxLjQxNCAxLjQxNC0xMC4yIDEwLjJ6IiAvPjxwYXRoIGQ9Ik0xMy41IDYuNWwtMS40MTQgMS40MTQgMy43NTcgMy43NTcgMS40MTQtMS40MTRhMiAyIDAgMCAwIDAtMi44MjhsLS45MjktLjkyOWEyIDIgMCAwIDAtMi44MjggMHoiIC8+PC9zdmc+" }
-              ]
-            },
-            size: { value: 30, random: { enable: true, minimumValue: 15 } },
-            opacity: { value: 0.5, random: { enable: true, minimumValue: 0.1 }, animation: { enable: true, speed: 0.5, minimumValue: 0.1, sync: false } },
-            move: { enable: true, speed: 1, direction: "none", random: true, straight: false, outModes: { default: "out" } }
-          },
-          interactivity: { detectsOn: "canvas", events: { resize: true } },
-          detectRetina: true
-        });
-      }
+    if (!openBtn || !chatbotWindow) return; // Elementlar yo'q bo'lsa to'xtatish
 
-      // Chatbot logikasi
-      const chatLog = document.getElementById('chat-log');
-      const userInput = document.getElementById('user-input');
-      const sendButton = document.getElementById('send-button');
-      const openBtn = document.getElementById('openBtn');
-      const closeBtn = document.getElementById('closeBtn');
-      const chatbotDiv = document.querySelector('.chatbot-div');
-
-      function appendMessage(message, sender) {
+    const appendMessage = (message, sender) => {
+        if (!chatLog) return;
         const messageDiv = document.createElement('div');
         messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
         messageDiv.textContent = message;
         chatLog.appendChild(messageDiv);
         chatLog.scrollTop = chatLog.scrollHeight;
-      }
+    };
 
-      async function sendMessage() {
+    const sendMessage = async () => {
         const messageText = userInput.value.trim();
         if (!messageText) return;
 
@@ -490,51 +479,84 @@
         userInput.focus();
 
         try {
-          const response = await fetch("{% url 'core:chatbot_api' %}", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-CSRFToken": getCookie("csrftoken"),
-            },
-            body: JSON.stringify({ message: messageText })
-          });
+            const response = await fetch("{% url 'core:chatbot_api' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCookie("csrftoken"),
+                },
+                body: JSON.stringify({ message: messageText })
+            });
 
-          if (!response.ok) throw new Error("Server xatosi: " + response.status);
-          const data = await response.json();
-          appendMessage(data.reply || "Javob topilmadi.", 'bot');
+            if (!response.ok) throw new Error(`Server error: ${response.status}`);
+            const data = await response.json();
+            appendMessage(data.reply || "Javob topilmadi.", 'bot');
         } catch (e) {
-          console.error(e);
-          appendMessage("Kechirasiz, server bilan bog'lanishda xatolik yuz berdi.", 'bot');
+            console.error("Chatbot Error:", e);
+            appendMessage("Kechirasiz, tizimda xatolik yuz berdi.", 'bot');
         }
-      }
+    };
 
-      sendButton.addEventListener('click', sendMessage);
-      userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
-      openBtn.addEventListener('click', () => { chatbotDiv.style.display = 'flex'; });
-      closeBtn.addEventListener('click', () => { chatbotDiv.style.display = 'none'; });
-      chatbotDiv.addEventListener('click', (e) => { if (e.target === chatbotDiv) chatbotDiv.style.display = 'none'; });
-    });
-
-    document.addEventListener('DOMContentLoaded', () => {
-    const openBtn = document.getElementById('openBtn');
-    const closeBtn = document.getElementById('closeBtn');
-    const chatbotWindow = document.getElementById('chatbotWindow');
-
-    // Botni ochish
+    // Hodisalarni bog'lash (Event Listeners)
     openBtn.addEventListener('click', () => {
         chatbotWindow.style.display = 'flex';
-        // Xabarlar eng pastiga tushishi uchun
-        const chatLog = document.getElementById('chat-log');
-        chatLog.scrollTop = chatLog.scrollHeight;
+        if (chatbotDiv) chatbotDiv.style.display = 'flex';
     });
 
-    // Botni yopish
-    closeBtn.addEventListener('click', () => {
+    closeBtn?.addEventListener('click', () => {
         chatbotWindow.style.display = 'none';
+        if (chatbotDiv) chatbotDiv.style.display = 'none';
     });
 
-    // Send logic (Sizning oldingi kodingizga o'xshash, faqat appendMessage ni biroz o'zgartiring)
-    // appendMessage ichida sender === 'user' bo'lsa 'user-message' va 'shadow-sm' klassini qo'shing
+    sendButton?.addEventListener('click', sendMessage);
+
+    userInput?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+    });
+
+    // Tashqariga bosilganda yopish
+    chatbotDiv?.addEventListener('click', (e) => {
+        if (e.target === chatbotDiv) {
+            chatbotWindow.style.display = 'none';
+            chatbotDiv.style.display = 'none';
+        }
+    });
+};
+
+// 3. Vizual effektlar (Particles & AOS)
+const initVisualEffects = () => {
+    // AOS animatsiyalarini yoqish
+    if (window.AOS) {
+        AOS.init({ duration: 800, once: true });
+    }
+
+    // tsParticles sozlamalari
+    if (window.tsParticles && document.getElementById('particles-container')) {
+        tsParticles.load("particles-container", {
+            fpsLimit: 60,
+            particles: {
+                number: { value: 25, density: { enable: true, area: 800 } },
+                shape: {
+                    type: "image",
+                    image: [
+                        { src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJpY29uIGljb24tdGFibGVyIGljb24tdGFibGVyLWJvb2stMiI+PHBhdGggc3Ryb2tlPSJub25lIiBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIj48L3BhdGg+PHBhdGggZD0iTTE5IDQuNTVhMi43IDEuNDUgMCAwIDAtMi43IC0uNTUgMi43IDEuNDUgMCAwIDAtMi43IC41NSAuNjg0LjY4NCAwIDAgMC0uMzUgMS40NWg1Ljc4MWEuNjkuNiAwIDAgMC0uMzUtMS40NXoiIC8+PHBhdGggZD0iTTggNGEyLjQgMS4yIDAgMCAxIDAgMi40IDIuNCAxLjIgMCAwIDEgMC0yLjQyIiAvPjxwYXRoIGQ9Ik0xMiA2aDIgYSBMMjAgNnYxMEExIDEgMCAwIDEgMTkgMTcgSDVhMSAxIDAgMCAxLTEtMVY3YTIgMiAwIDAgMSA0IDBoMiIvPjwvc3ZnPg==" },
+                        { src: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMS41IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJpY29uIGljb24tdGFibGVyIGljb24tdGFibGVyLXBlbmNpbCI+PHBhdGggc3Ryb2tlPSJub25lIiBkPSJNMCAwaDI0djI0SDB6IiBmaWxsPSJub25lIj48L3BhdGg+PHBhdGggZD0iTTQgMjAuNDAzbDEwLjItMTAuMiAxLjQxNCAxLjQxNC0xMC4yIDEwLjJ6IiAvPjxwYXRoIGQ9Ik0xMy41IDYuNWwtMS40MTQgMS40MTQgMy43NTcgMy43NTcgMS40MTQtMS40MTRhMiAyIDAgMCAwIDAtMi44MjhsLS45MjktLjkyOWEyIDIgMCAwIDAtMi44MjggMHoiIC8+PC9zdmc+" }
+                    ]
+                },
+                size: { value: 30, random: { enable: true, minimumValue: 15 } },
+                opacity: { value: 0.5, random: { enable: true, minimumValue: 0.1 }, animation: { enable: true, speed: 0.5, minimumValue: 0.1, sync: false } },
+                move: { enable: true, speed: 1, direction: "none", random: true, straight: false, outModes: { default: "out" } }
+            },
+            interactivity: { detectsOn: "canvas", events: { resize: true } },
+            detectRetina: true
+        });
+    }
+};
+
+// 4. Barcha funksiyalarni ishga tushirish
+document.addEventListener('DOMContentLoaded', () => {
+    initVisualEffects();
+    initChatbot();
 });
   </script>
 </body>

@@ -1,0 +1,282 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ILMS Platformasi</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/aos@next/dist/aos.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::after, *::before { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0d2c40;
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #background-iframe { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; border: none; }
+        #particles-container { position: fixed; width: 100%; height: 100%; top: 0; left: 0; z-index: 1; pointer-events: none; }
+        .page-layer { z-index: 2; position: relative; width: 100%; max-width: 1200px; }
+
+        /* Professional Glassmorphism */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 28px;
+            transition: all 0.4s ease;
+        }
+        .glass-card:hover { border-color: rgba(0, 123, 255, 0.4); transform: translateY(-5px); }
+
+        /* Mastery Circle Animation */
+        .mastery-circle {
+            width: 170px; height: 170px; border-radius: 50%;
+            background: conic-gradient(#007bff var(--p), rgba(255,255,255,0.05) 0);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 30px rgba(0, 123, 255, 0.2);
+        }
+        .mastery-inner {
+            width: 145px; height: 145px; background: #0d2c40; border-radius: 50%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        /* Progress Bar */
+        .bar-container { background: rgba(255, 255, 255, 0.05); height: 8px; border-radius: 10px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 10px; transition: width 1.5s ease-in-out; }
+
+        .text-pass { color: #2ecc71 !important; }
+        .text-fail { color: #ff6b6b !important; }
+        .text-cyan { color: #a7dceb; }
+
+        /* Custom Styles for Navbar */
+        .navbar {
+            width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+            background: rgba(255,255,255,.10);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,.18);
+            border-radius: 18px; padding: 14px 16px;
+            box-shadow: 0 8px 32px 0 rgba(0,0,0,.25);
+            margin-bottom: 2rem;
+        }
+        .brand { display: flex; align-items: center; gap: 10px; color: #fff; text-decoration: none; font-weight: 700; letter-spacing: .2px; }
+        .brand-badge { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; background: rgba(0,123,255,.20); border: 1px solid rgba(0,123,255,.30); color: #fff; }
+        .nav-links { display: flex; align-items: center; gap: 10px; }
+        .nav-btn { text-decoration: none; color: #fff; font-weight: 600; font-size: .95rem; padding: 10px 14px; border-radius: 14px; background: rgba(255,255,255,.10); border: 1px solid rgba(255,255,255,.18); transition: all .2s ease; }
+        .nav-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,.14); }
+        .nav-btn.primary { background: rgba(0,123,255,.22); border: 1px solid rgba(0,123,255,.35); }
+    </style>
+</head>
+<body>
+
+    <div id="particles-container"></div>
+
+    <div class="page-layer">
+        
+        <!-- NAVBAR -->
+        <nav class="navbar">
+            <a href="{% url 'core:home' %}" class="brand">
+                <div class="brand-badge">IL</div>
+                ILMS
+            </a>
+            <div class="nav-links">
+                {% if request.user.is_authenticated %}
+                <span class="nav-user" style="color: #a7dceb; font-size: .92rem; margin-right: 6px;">{{ request.user.username }}</span>
+                <a href="{% url 'core:dashboard' %}" class="nav-btn primary">Dashboard</a>
+                <a href="{% url 'core:logout' %}" class="nav-btn">Chiqish</a>
+                {% else %}
+                <a href="{% url 'core:login' %}" class="nav-btn">Kirish</a>
+                <a href="{% url 'core:register' %}" class="nav-btn primary">Ro'yxatdan o'tish</a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <!-- 1. TOP OVERVIEW: ÜCH NAZORAT TURI -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10" data-aos="fade-down">
+            <!-- Joriy Nazorat -->
+            <div class="glass-card p-6 flex flex-col items-center text-center">
+                <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mb-4 border border-blue-500/30">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Joriy Nazorat</p>
+                <h2 class="text-3xl font-black mt-1">{{ joriy_ball }} <span class="text-sm font-normal">ball</span></h2>
+                <p class="text-[9px] text-blue-300 mt-2">Amaliy ishlar o'rtachasi</p>
+            </div>
+
+            <!-- Oraliq Nazorat -->
+            <div class="glass-card p-6 flex flex-col items-center text-center border-blue-500/30 bg-blue-500/5">
+                <div class="w-12 h-12 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mb-4 border border-emerald-500/30">
+                    <i class="fas fa-chart-bar"></i>
+                </div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Oraliq Nazorat</p>
+                <h2 class="text-3xl font-black mt-1">{{ oraliq_ball }} <span class="text-sm font-normal">ball</span></h2>
+                <p class="text-[9px] text-emerald-300 mt-2">Eng yuqori progress (E/A/N)</p>
+            </div>
+
+            <!-- Yakuniy Nazorat -->
+            <div class="glass-card p-6 flex flex-col items-center text-center">
+                <div class="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-full flex items-center justify-center mb-4 border border-purple-500/30">
+                    <i class="fas fa-file-signature"></i>
+                </div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Yakuniy Nazorat</p>
+                <h2 class="text-3xl font-black mt-1">{{ yakuniy_ball }} <span class="text-sm font-normal">ball</span></h2>
+                <p class="text-[9px] text-purple-300 mt-2">Imtihon natijalari o'rtachasi</p>
+            </div>
+        </div>
+
+        <!-- 2. MAIN PROGRESS & DETAILS -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Overall Mastery Card -->
+            <div class="lg:col-span-1 glass-card p-10 flex flex-col items-center justify-center" data-aos="fade-right">
+                <div class="mastery-circle mb-8" style="--p: {{ total_mastery|default:0 }}%;">
+                    <div class="mastery-inner">
+                        <span class="text-5xl font-black text-white">{{ total_mastery }}%</span>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Natija</span>
+                    </div>
+                </div>
+                <h3 class="text-2xl font-bold mb-3">Umumiy Ko'rsatkich</h3>
+                <p class="text-xs text-slate-400 text-center leading-relaxed">
+                    Sizning natijangiz 50/50 tamoyili asosida: 
+                    <b>Oraliq/Joriy</b> (50%) va <b>Yakuniy</b> (50%) nazoratlar integratsiyasi.
+                </p>
+
+                <!-- EXPORT & CERTIFICATE BUTTONS -->
+                <div class="flex flex-col w-full gap-3 mt-10">
+                    <a href="{% url 'core:export_docx' %}" class="bg-white/5 hover:bg-white/10 border border-white/10 p-4 rounded-2xl flex items-center justify-center gap-3 transition-all text-xs font-bold uppercase tracking-wider">
+                        <i class="fas fa-file-word text-blue-400"></i> Natijalarni yuklash
+                    </a>
+
+                    {% if total_mastery >= 60 %}
+                    <a href="{% url 'core:certificate' %}" target="_blank" class="bg-blue-600 hover:bg-blue-700 p-4 rounded-2xl flex items-center justify-center gap-3 transition-all text-xs font-bold uppercase tracking-wider shadow-lg shadow-blue-600/30">
+                        <i class="fas fa-certificate text-amber-400"></i> Sertifikatni olish
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Detailed App Progress -->
+            <div class="lg:col-span-2 glass-card p-10" data-aos="fade-left">
+                <h3 class="text-xl font-bold mb-10 flex items-center gap-3 border-b border-white/5 pb-6">
+                    <i class="fas fa-tasks text-blue-500"></i> Darslar Progressi
+                </h3>
+                
+                <div class="space-y-10">
+                    <!-- Elementar -->
+                    <div>
+                        <div class="flex justify-between items-end mb-3">
+                            <span class="text-sm font-bold text-slate-200">Elementar Modul</span>
+                            <span class="text-xs font-black text-blue-400">{{ e_percent }}%</span>
+                        </div>
+                        <div class="bar-container">
+                            <div class="bar-fill bg-blue-600" style="width: var(--w); --w: {{ e_percent|default:0 }}%;"></div>
+                        </div>
+                        <p class="text-[9px] text-slate-500 mt-2 font-bold uppercase">{{ e_done }}/{{ e_total }} dars yakunlandi</p>
+                    </div>
+                    <!-- Adaptive -->
+                    <div>
+                        <div class="flex justify-between items-end mb-3">
+                            <span class="text-sm font-bold text-slate-200">Adaptive Learning</span>
+                            <span class="text-xs font-black text-amber-400">{{ a_percent }}%</span>
+                        </div>
+                        <div class="bar-container">
+                            <div class="bar-fill bg-amber-500" style="width: var(--w); --w: {{ a_percent|default:0 }}%;"></div>
+                        </div>
+                        <p class="text-[9px] text-slate-500 mt-2 font-bold uppercase">{{ a_done }}/{{ a_total }} bosqich ochildi</p>
+                    </div>
+                    <!-- Neural -->
+                    <div>
+                        <div class="flex justify-between items-end mb-3">
+                            <span class="text-sm font-bold text-slate-200">Neural Path (Essential)</span>
+                            <span class="text-xs font-black text-purple-400">{{ n_percent }}%</span>
+                        </div>
+                        <div class="bar-container">
+                            <div class="bar-fill bg-purple-600" style="width: var(--w); --w: {{ n_percent|default:0 }}%;"></div>
+                        </div>
+                        <p class="text-[9px] text-slate-500 mt-2 font-bold uppercase">{{ n_done }}/{{ n_total }} tugun o'zlashtirildi</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. LISTS: PRACTICAL & QUIZ RESULTS -->
+            <div class="lg:col-span-1 glass-card p-8" data-aos="fade-up">
+                <h4 class="text-xs font-bold mb-6 text-blue-400 uppercase tracking-[0.2em]">Amaliy Ishlar</h4>
+                <div class="space-y-4">
+                    {% for sub in recent_practicals %}
+                    <div class="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <span class="text-xs font-medium truncate w-32 text-slate-300">{{ sub.assignment.title }}</span>
+                        <span class="text-xs font-black text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-lg border border-emerald-400/20">{{ sub.grade }} b.</span>
+                    </div>
+                    {% empty %}
+                    <p class="text-[10px] text-slate-500 italic text-center py-6">Ma'lumotlar yo'q</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="lg:col-span-2 glass-card p-8" data-aos="fade-up" data-aos-delay="200">
+                <h4 class="text-xs font-bold mb-6 text-purple-400 uppercase tracking-[0.2em]">Test Natijalari</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {% for quiz in recent_quizzes %}
+                    <div class="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-slate-200">{{ quiz.subject.name }}</span>
+                            <span class="text-[9px] text-slate-500 uppercase font-bold">{{ quiz.started_at|date:"d M, H:i" }}</span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm font-black {% if quiz.score >= 60 %}text-pass{% else %}text-fail{% endif %}">
+                                {{ quiz.score|floatformat:0 }}%
+                            </span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-[10px] text-slate-500 italic text-center py-6 col-span-2">Tugatilgan testlar yo'q</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER QUICK LINKS -->
+        <div class="mt-12 flex flex-wrap justify-center gap-8 mb-10" data-aos="zoom-in">
+             <a href="{% url 'practical:list' %}" class="glass-card px-8 py-3 text-[10px] font-bold uppercase tracking-widest hover:text-blue-400 transition-colors">
+                 <i class="fas fa-flask mr-2"></i> Amaliy Mashg'ulotlar
+             </a>
+             <a href="{% url 'quiz:home' %}" class="glass-card px-8 py-3 text-[10px] font-bold uppercase tracking-widest hover:text-blue-400 transition-colors">
+                 <i class="fas fa-vial mr-2"></i> Imtihon Markazi
+             </a>
+        </div>
+
+    </div>
+
+    <script src="https://unpkg.com/aos@next/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tsparticles@1.34.1/dist/tsparticles.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            AOS.init({ duration: 800, once: true });
+            if (window.tsParticles) {
+                tsParticles.load("particles-container", {
+                    fpsLimit: 60,
+                    particles: {
+                        number: { value: 30, density: { enable: true, area: 800 } },
+                        color: { value: "#ffffff" },
+                        shape: { type: "circle" },
+                        opacity: { value: 0.1 },
+                        size: { value: 2 },
+                        move: { enable: true, speed: 0.5 }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

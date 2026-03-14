@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'adaptive',
     'neural',
     'quiz',
+    'practical',
 ]
 
 MIDDLEWARE = [
@@ -300,6 +301,15 @@ UNFOLD = {
                         "icon": "smart_toy", # Robot ikonka
                         "link": reverse_lazy("admin:core_botknowledge_changelist"),
                     },
+                ],
+            },
+            {
+                "title": _("Amaliy & Mustaqil"),
+                "separator": True,
+                "collapsible": True,
+                "items": [
+                    {"title": _("Topshiriqlar"), "icon": "assignment", "link": reverse_lazy("admin:practical_assignment_changelist")},
+                    {"title": _("Talabalar Javoblari"), "icon": "fact_check", "link": reverse_lazy("admin:practical_submission_changelist")},
                 ],
             },
             {

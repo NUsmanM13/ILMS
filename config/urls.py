@@ -14,4 +14,5 @@ urlpatterns = [
     path('adaptive/', include('adaptive.urls')),
     path('neural/', include('neural.urls')),
     path('quiz/', include('quiz.urls')),
+    path('practical/', include('practical.urls')),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

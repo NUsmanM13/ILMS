@@ -6,6 +6,7 @@
   <div class="nav-links">
     {% if request.user.is_authenticated %}
       <span class="nav-user">{{ request.user.username }}</span>
+      <a href="{% url 'core:dashboard' %}" class="nav-btn">Dashboard</a>
       <a href="{% url 'core:logout' %}" class="nav-btn primary">Chiqish</a>
     {% else %}
       <a href="{% url 'core:login' %}" class="nav-btn">Kirish</a>
