@@ -1,85 +1,126 @@
 from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline, StackedInline
-from .models import Course, Module, Element, Question, Progress
+from unfold.decorators import display
+from .models import Course, Module, Topic, Element, Question, UserProgress
 
-# 1. Element ichida Testni (Question) ko'rsatish
+# ----------------------------------------------------------------
+# INLINES (Ichma-ich ko'rinishlar)
+# ----------------------------------------------------------------
+
 class QuestionInline(StackedInline):
+    """Element (Daraja) ichida savollarni ko'rsatish"""
     model = Question
-    can_delete = False
-    verbose_name = "Bosqich testi"
-    verbose_name_plural = "Bosqich testi"
-    tab = True # Unfold-da alohida tab bo'lib chiqadi
-
-# 2. Modul ichida Elementlarni ko'rsatish
-class ElementInline(TabularInline):
-    model = Element
     extra = 1
-    show_change_link = True # Element tahrirlash sahifasiga tezkor o'tish
-    fields = ["title", "order", "video_url"]
+    tab = True # Unfold-da alohida tabga ajratadi
+    verbose_name = "Test savoli"
+    verbose_name_plural = "Test savollari"
 
-# 3. Kurs (Course) ichida Modullarni ko'rsatish
+class ElementInline(TabularInline):
+    """Mavzu (Topic) ichida uning 3 ta darajasini ko'rsatish"""
+    model = Element
+    extra = 0 # Avtomatik 3 ta daraja bo'lishi shart emas, lekin qo'shsa bo'ladi
+    show_change_link = True
+    fields = ["difficulty", "video_url"]
+    tab = True
+
+class TopicInline(TabularInline):
+    """Modul ichida mavzularni ko'rsatish"""
+    model = Topic
+    extra = 1
+    show_change_link = True
+    fields = ["title", "order"]
+
 class ModuleInline(TabularInline):
+    """Kurs ichida modullarni ko'rsatish"""
     model = Module
     extra = 1
     show_change_link = True
     fields = ["title", "order"]
 
+# ----------------------------------------------------------------
+# MODEL ADMINS
+# ----------------------------------------------------------------
+
 @admin.register(Course)
 class CourseAdmin(ModelAdmin):
-    list_display = ["title", "created_at", "display_modules_count", "display_total_elements"]
+    list_display = ["title", "created_at", "display_modules_count", "display_total_topics"]
     search_fields = ["title"]
     inlines = [ModuleInline]
 
-    # Kursdagi modullar sonini hisoblash
+    @display(description="Modullar soni", label=True)
     def display_modules_count(self, obj):
         return obj.modules.count()
-    display_modules_count.short_description = "Modullar"
 
-    # Kursdagi jami elementlar sonini hisoblash
-    def display_total_elements(self, obj):
-        from .models import Element
-        return Element.objects.filter(module__course=obj).count()
-    display_total_elements.short_description = "Jami darslar"
+    @display(description="Jami Mavzular", label=True)
+    def display_total_topics(self, obj):
+        return Topic.objects.filter(module__course=obj).count()
+
 
 @admin.register(Module)
 class ModuleAdmin(ModelAdmin):
-    list_display = ["title", "course", "order", "display_elements_count"]
+    list_display = ["title", "course", "order", "display_topics_count"]
     list_filter = ["course"]
+    search_fields = ["title"]
+    inlines = [TopicInline]
+
+    @display(description="Mavzular soni", label=True)
+    def display_topics_count(self, obj):
+        return obj.topics.count()
+
+
+@admin.register(Topic)
+class TopicAdmin(ModelAdmin):
+    list_display = ["title", "module", "order", "display_elements_count"]
+    list_filter = ["module__course", "module"]
     search_fields = ["title"]
     inlines = [ElementInline]
 
+    @display(description="Darajalar soni", label=True)
     def display_elements_count(self, obj):
         return obj.elements.count()
-    display_elements_count.short_description = "Elementlar"
+
 
 @admin.register(Element)
 class ElementAdmin(ModelAdmin):
-    # 'order' birinchi turgani uchun xato bergandi. 
-    # 'title'ni birinchi o'ringa qo'yamiz yoki list_display_links ni aniq ko'rsatamiz.
-    list_display = ["order", "title", "module", "display_course"]
-    list_display_links = ["title"]  # Endi link 'title' ustida bo'ladi
-    list_editable = ["order"]       # Tartibni endi bemalol tahrirlasa bo'ladi
-    list_filter = ["module__course", "module"]
-    search_fields = ["title", "content"]
+    list_display = ["topic", "difficulty", "display_module", "display_course", "display_questions_count"]
+    list_display_links = ["topic"]
+    list_filter = ["difficulty", "topic__module__course", "topic__module"]
+    search_fields = ["topic__title", "content"]
     inlines = [QuestionInline]
     
+    @display(description="Modul")
+    def display_module(self, obj):
+        return obj.topic.module.title
+
+    @display(description="Kurs")
     def display_course(self, obj):
-        return obj.module.course
-    display_course.short_description = "Kurs nomi"
+        return obj.topic.module.course.title
 
-@admin.register(Progress)
-class ProgressAdmin(ModelAdmin):
-    list_display = ["user", "display_course", "element", "completed"]
-    list_filter = ["completed", "element__module__course", "user"]
-    search_fields = ["user__username", "element__title"]
-    readonly_fields = ["user", "element", "completed"] # Progress o'zgartirilmasligi kerak
+    @display(description="Savollar", label=True)
+    def display_questions_count(self, obj):
+        return obj.questions.count()
 
-    def display_course(self, obj):
-        return obj.element.module.course
-    display_course.short_description = "Kurs"
 
-# Savollarni alohida tahrirlash uchun
+@admin.register(UserProgress)
+class UserProgressAdmin(ModelAdmin):
+    # Modelda highest_level ga o'zgartirganimiz uchun bu yerda ham yangiladik
+    list_display = ["user", "topic", "highest_level", "score", "is_passed", "updated_at"]
+    list_filter = ["is_passed", "highest_level", "topic__module__course"]
+    search_fields = ["user__username", "topic__title"]
+    
+    # Progress avtomatik hisoblangani uchun uni admin panelda o'zgartirib bo'lmaydi (faqat ko'rish mumkin)
+    readonly_fields = ["user", "topic", "element", "score", "is_passed", "highest_level", "updated_at"]
+
+    def has_add_permission(self, request):
+        return False # Admin progress qo'sha olmaydi
+
+
 @admin.register(Question)
 class QuestionAdmin(ModelAdmin):
-    list_display = ["text", "element", "correct_option"]
-    list_filter = ["element__module__course"]
+    list_display = ["text", "display_element", "correct_option"]
+    list_filter = ["element__difficulty", "element__topic__module__course"]
+    search_fields = ["text"]
+
+    @display(description="Mavzu va Daraja")
+    def display_element(self, obj):
+        return f"{obj.element.topic.title} ({obj.element.difficulty}-daraja)"

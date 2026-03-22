@@ -1,89 +1,182 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Course, Module, Element, Progress, Question
-from django.db.models import Max
-
+from django.contrib import messages
+from .models import Course, Module, Topic, Element, Question, UserProgress
 
 @login_required
 def course_list(request):
-    courses = Course.objects.prefetch_related('modules__elements').all()
-    courses_with_progress = []
+    """Barcha kurslar va ulardagi progressni ko'rsatish"""
+    courses = Course.objects.all()
+    courses_data = []
 
     for course in courses:
-        # Umumiy elementlar soni
-        total_elements = Element.objects.filter(module__course=course).count()
-        # Tugatilgan elementlar soni
-        completed_count = Progress.objects.filter(
+        # Kursdagi jami mavzular soni
+        all_topics = Topic.objects.filter(module__course=course)
+        total_topics_count = all_topics.count()
+        
+        # Tugatilgan mavzular soni
+        passed_topics_count = UserProgress.objects.filter(
             user=request.user, 
-            element__module__course=course, 
-            completed=True
+            topic__module__course=course, 
+            is_passed=True
         ).count()
         
-        # Foiz hisoblash
-        percent = int((completed_count / total_elements) * 100) if total_elements > 0 else 0
+        # Progress foizi
+        percent = int((passed_topics_count / total_topics_count) * 100) if total_topics_count > 0 else 0
         
-        # Birinchi dars id si (Kursni boshlash tugmasi uchun)
-        first_element = Element.objects.filter(module__course=course).order_by('order').first()
+        # Birinchi darsga kirish nuqtasi (3-darajali element)
+        first_topic = all_topics.order_by('module__order', 'order').first()
+        first_element_id = None
+        if first_topic:
+            first_el = Element.objects.filter(topic=first_topic, difficulty=3).first()
+            if first_el:
+                first_element_id = first_el.id
 
-        courses_with_progress.append({
+        courses_data.append({
             'course': course,
             'percent': percent,
-            'first_element_id': first_element.id if first_element else None
+            'first_element_id': first_element_id
         })
 
-    return render(request, 'adaptive/course_list.html', {'courses_data': courses_with_progress})
+    return render(request, 'adaptive/course_list.html', {'courses_data': courses_data})
+
 
 @login_required
 def element_detail(request, element_id):
-    # 1. Joriy elementni olish
-    element = get_object_or_404(Element, id=element_id)
-    course = element.module.course
+    """Dars detallari, Test topshirish va Adaptiv mantiq"""
+    # select_related ishlatish DB so'rovlarini kamaytiradi
+    element = get_object_or_404(Element.objects.select_related('topic__module__course'), id=element_id)
+    topic = element.topic
+    course = topic.module.course
     user = request.user
-
-    # 2. Kursdagi barcha elementlarni tartib bilan olish
-    all_elements = Element.objects.filter(module__course=course).order_by('order')
     
-    # 3. Foydalanuvchi tugatgan darslarni olish
-    completed_elements = Progress.objects.filter(user=user, element__module__course=course, completed=True).values_list('element_id', flat=True)
-
-    # 4. ADAPTIVE LOGIKA: Ruxsatni tekshirish
-    # Foydalanuvchiga ruxsat berilgan darslar: (Tugatganlari + keyingi 1 ta dars)
-    last_completed_order = Element.objects.filter(id__in=completed_elements).aggregate(Max('order'))['order__max'] or 0
+    # --- 1. ACCESS CONTROL (LOCKING SYSTEM) ---
+    all_course_topics = Topic.objects.filter(
+        module__course=course
+    ).order_by('module__order', 'order')
     
-    # Agar foydalanuvchi ruxsat etilmagan (qulflangan) darsga kirmoqchi bo'lsa:
-    if element.order > last_completed_order + 1:
-        # Uni ruxsat etilgan eng oxirgi darsga yo'naltiramiz
-        first_locked = all_elements.filter(order__gt=last_completed_order).first()
-        return redirect('adaptive:element_detail', element_id=first_element.id if not first_locked else first_locked.id)
+    previous_topic = None
+    for t in all_course_topics:
+        if t == topic:
+            break
+        previous_topic = t
+        
+    if previous_topic:
+        prev_progress = UserProgress.objects.filter(user=user, topic=previous_topic, is_passed=True).exists()
+        if not prev_progress:
+            messages.warning(request, "Avvalgi mavzuni yakunlamasdan turib keyingi mavzuga o'ta olmaysiz.")
+            return redirect('adaptive:course_list')
 
-    # 5. Sidebar uchun ma'lumotlarni shakllantirish
-    sidebar_data = []
-    for el in all_elements:
-        sidebar_data.append({
-            'id': el.id,
-            'title': el.title,
-            'is_completed': el.id in completed_elements,
-            'is_active': el.id == element.id,
-            'is_locked': el.order > last_completed_order + 1
-        })
+    # --- 2. TEST TOPSHIRISH (POST METHOD) ---
+    questions = element.questions.all()
+    modal_data = None
 
-    # 6. Test topshirish (POST)
-    error = None
     if request.method == "POST":
-        selected = request.POST.get('option')
-        if selected and hasattr(element, 'quiz') and int(selected) == element.quiz.correct_option:
-            Progress.objects.get_or_create(user=user, element=element, completed=True)
-            return redirect('adaptive:element_detail', element_id=element.id)
+        correct_count = 0
+        total_q = questions.count()
+        for q in questions:
+            ans = request.POST.get(f'q_{q.id}')
+            if ans and int(ans) == q.correct_option:
+                correct_count += 1
+        
+        score_percent = int((correct_count / total_q) * 100) if total_q > 0 else 0
+        is_passed = score_percent >= 60
+
+        # Progressni DB da yangilash yoki yaratish
+        progress, created = UserProgress.objects.get_or_create(
+            user=user, topic=topic,
+            defaults={
+                'element': element, 
+                'score': score_percent, 
+                'is_passed': is_passed, 
+                'highest_level': element.difficulty
+            }
+        )
+        
+        if not created:
+            if is_passed:
+                progress.is_passed = True
+                # Yaxshiroq natija bo'lsagina yangilaymiz
+                if score_percent > progress.score:
+                    progress.score = score_percent
+                if element.difficulty > progress.highest_level:
+                    progress.highest_level = element.difficulty
+                progress.element = element
+            progress.save()
+
+        # --- 3. ADAPTIVE LOGIC (KEYINGI QADAMNI ANIQLASH) ---
+        if is_passed:
+            higher_levels = Element.objects.filter(topic=topic, difficulty__gt=element.difficulty).order_by('difficulty')
+            
+            next_topic = None
+            found_current = False
+            for t in all_course_topics:
+                if found_current:
+                    next_topic = t
+                    break
+                if t == topic:
+                    found_current = True
+            
+            next_topic_elements = Element.objects.filter(topic=next_topic).order_by('difficulty') if next_topic else []
+            
+            modal_data = {
+                'status': 'success',
+                'score': score_percent,
+                'higher_levels': higher_levels,
+                'next_topic': next_topic,
+                'next_topic_elements': next_topic_elements,
+                'current_difficulty': element.difficulty
+            }
         else:
-            error = "Xato javob! Iltimos, ma'lumotni qayta ko'rib chiqing."
+            lower_levels = Element.objects.filter(topic=topic, difficulty__lt=element.difficulty).order_by('-difficulty')
+            modal_data = {
+                'status': 'fail',
+                'score': score_percent,
+                'lower_levels': lower_levels,
+                'current_difficulty': element.difficulty
+            }
 
-    # YouTube URL formatlash
-    embed_url = element.video_url.replace("watch?v=", "embed/") if element.video_url else None
+    # --- 4. SIDEBAR VA PROGRESS (SHABLONGA MOSLAB) ---
+    passed_topics_ids = UserProgress.objects.filter(user=user, is_passed=True).values_list('topic_id', flat=True)
+    
+    total_topics_count = all_course_topics.count()
+    passed_count = len(passed_topics_ids)
+    progress_percent = int((passed_count / total_topics_count) * 100) if total_topics_count > 0 else 0
 
-    return render(request, 'adaptive/element_detail.html', {
+    sidebar_items = []
+    unlocked = True 
+    for t in all_course_topics:
+        is_comp = t.id in passed_topics_ids
+        first_el = t.elements.order_by('difficulty').first()
+        
+        sidebar_items.append({
+            'topic': t,
+            'is_active': t.id == topic.id,
+            'is_locked': not unlocked,
+            'is_completed': is_comp,
+            'url': first_el.id if first_el else None
+        })
+        unlocked = is_comp
+
+    # Video URL ni embed formatga o'tkazish
+    video_embed = None
+    if element.video_url:
+        url = element.video_url
+        if "watch?v=" in url:
+            video_embed = url.replace("watch?v=", "embed/")
+        elif "youtu.be/" in url:
+            video_embed = url.replace("youtu.be/", "youtube.com/embed/")
+        elif "vimeo.com/" in url:
+            video_embed = url.replace("vimeo.com/", "player.vimeo.com/video/")
+
+    context = {
         'element': element,
-        'sidebar_data': sidebar_data,
-        'embed_url': embed_url,
-        'test_passed': element.id in completed_elements,
-        'error': error,
-    })
+        'topic': topic,
+        'questions': questions,
+        'modal_data': modal_data,
+        'sidebar_items': sidebar_items,
+        'progress_percent': progress_percent,
+        'video_embed': video_embed,
+    }
+
+    return render(request, 'adaptive/element_detail.html', context)

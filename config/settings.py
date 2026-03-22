@@ -216,8 +216,8 @@ UNFOLD = {
                 "collapsible": True,
                 "items": [
                     {
-                        "title": _("Adaptive Modul"),
-                        "icon": "lock_open",
+                        "title": _("Adaptive Kurslar"),
+                        "icon": "school", # Belgini o'zgartirdik (ixtiyoriy)
                         "link": reverse_lazy("admin:adaptive_course_changelist"),
                     },
                     {
@@ -226,14 +226,20 @@ UNFOLD = {
                         "link": reverse_lazy("admin:adaptive_module_changelist"),
                     },
                     {
-                        "title": _("Dars Bosqichlari"),
+                        "title": _("Mavzular (Topics)"), # Yangi modelimiz uchun bo'lim
+                        "icon": "segment", 
+                        "link": reverse_lazy("admin:adaptive_topic_changelist"),
+                    },
+                    {
+                        "title": _("Dars Bosqichlari (3/4/5)"),
                         "icon": "format_list_numbered",
                         "link": reverse_lazy("admin:adaptive_element_changelist"),
                     },
                     {
                         "title": _("Progress Tarixi"),
                         "icon": "history_edu",
-                        "link": reverse_lazy("admin:adaptive_progress_changelist"),
+                        # Model nomi UserProgress bo'lgani uchun link ham o'zgardi:
+                        "link": reverse_lazy("admin:adaptive_userprogress_changelist"), 
                     },
                 ],
             },

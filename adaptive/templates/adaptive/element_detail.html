@@ -3,160 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ element.title }} - Adaptive</title>
+    <title>{{ element.topic.title }} | Adaptive LMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
     <style>
-        /* Body balandligini ekranga tenglaymiz va asosiy scrollni o'chiramiz */
-        body { 
-            font-family: 'Plus Jakarta Sans', sans-serif; 
-            background-color: #ffffff; 
-            color: #1e293b; 
-            height: 100vh; 
-            overflow: hidden; 
-        }
-        /* Sidebar o'zining ichida scroll bo'lishi uchun */
-        .sidebar { 
-            height: 100vh; 
-            overflow-y: auto; 
-            background: #fbfcfd; 
-            border-right: 1px solid #f1f5f9; 
-        }
-        /* Asosiy kontent o'zining ichida scroll bo'lishi uchun */
-        .content-area { 
-            height: 100vh; 
-            overflow-y: auto; 
-            scroll-behavior: smooth;
-        }
-        .locked { opacity: 0.4; filter: grayscale(1); pointer-events: none; }
-        .active-step { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.03); border: 1px solid #e2e8f0; border-radius: 12px; color: #2563eb; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
         
-        /* Scrollbar dizayni */
-        ::-webkit-scrollbar { width: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+        .level-badge-3 { @apply bg-emerald-100 text-emerald-700 border-emerald-200; }
+        .level-badge-4 { @apply bg-amber-100 text-amber-700 border-amber-200; }
+        .level-badge-5 { @apply bg-rose-100 text-rose-700 border-rose-200; }
 
-        .progress-line { position: absolute; left: 23px; top: 35px; bottom: -15px; width: 2px; background: #e2e8f0; }
-        .element-item:last-child .progress-line { display: none; }
+        .glass-effect { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); }
+        
+        @keyframes modal-in {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-animate { animation: modal-in 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
     </style>
 </head>
-<body class="flex text-slate-900">
+<body class="bg-[#F8FAFC] text-slate-900 overflow-hidden">
 
-    <!-- Sidebar -->
-    <aside class="w-80 sidebar shrink-0 p-6 hidden lg:block">
-        <div class="mb-10 flex items-center gap-3 px-2">
-            <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-lg shadow-blue-200">
-                <i class="fas fa-layer-group text-xs"></i>
-            </div>
-            <h2 class="font-extrabold text-xl tracking-tight">Adaptive <span class="text-blue-600"></span></h2>
-        </div>
-
-        <nav class="space-y-2">
-            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-3 mb-4">Kurs Mazmuni</p>
-            {% for item in sidebar_data %}
-            <div class="{% if item.is_locked %}locked{% endif %}">
-                <a href="{% url 'adaptive:element_detail' item.id %}" 
-                   class="flex items-center gap-3 p-3 transition-all text-sm font-medium {% if item.is_active %}active-step{% else %}text-slate-500 hover:bg-slate-50 rounded-xl{% endif %}">
-                    <div class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 
-                        {% if item.is_completed %} bg-emerald-100 text-emerald-600 {% elif item.is_active %} bg-blue-600 text-white {% else %} bg-slate-100 text-slate-400 {% endif %}">
-                        {% if item.is_completed %}
-                            <i class="fas fa-check text-[10px]"></i>
-                        {% elif item.is_locked %}
-                            <i class="fas fa-lock text-[10px]"></i>
-                        {% else %}
-                            {{ forloop.counter }}
-                        {% endif %}
+    <div class="flex h-screen">
+        <!-- SIDEBAR -->
+        <aside class="w-80 bg-white border-r border-slate-200 flex flex-col hidden lg:flex">
+            <div class="p-6">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                        <i class="fas fa-graduation-cap"></i>
                     </div>
-                    <span class="truncate">{{ item.title }}</span>
-                </a>
-            </div>
-            {% endfor %}
-        </nav>
-    </aside>
-
-    <!-- Content (Scroll shu yerda bo'ladi) -->
-    <main class="flex-1 content-area bg-white">
-        <!-- Minimal Top Nav -->
-        <header class="h-16 px-12 flex items-center justify-between border-b border-slate-50 sticky top-0 bg-white/90 backdrop-blur-lg z-20">
-            <a href="{% url 'adaptive:course_list' %}" class="text-xs font-bold text-slate-400 hover:text-blue-600 transition-colors">
-                <i class="fas fa-chevron-left mr-2"></i> Darslarga qaytish
-            </a>
-            <div class="flex items-center gap-3">
-                <span class="text-xs font-bold">{{ user.username }}</span>
-                <div class="w-8 h-8 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold text-[10px]">
-                    {{ user.username|first|upper }}
+                    <span class="font-extrabold text-xl tracking-tight">Adaptive<span class="text-indigo-600">Pro</span></span>
                 </div>
-            </div>
-        </header>
-
-        <div class="max-w-3xl mx-auto py-16 px-6">
-            <div class="mb-10">
-                <span class="text-xs font-bold text-blue-600 uppercase tracking-[0.2em] mb-4 block">Modul: {{ element.module.title }}</span>
-                <h1 class="text-5xl font-black tracking-tighter text-slate-900 leading-tight">{{ element.title }}</h1>
-            </div>
-
-            {% if embed_url %}
-            <div class="aspect-video rounded-[2.5rem] overflow-hidden bg-slate-100 mb-12 shadow-2xl shadow-blue-100/20">
-                <iframe class="w-full h-full" src="{{ embed_url }}" frameborder="0" allowfullscreen></iframe>
-            </div>
-            {% endif %}
-
-            <!-- Matn qismi -->
-            <article class="prose prose-slate max-w-none text-slate-600 text-lg leading-relaxed mb-16">
-                {{ element.content|safe }}
-            </article>
-
-            <!-- Quiz Section -->
-            <div class="bg-slate-50 border border-slate-100 rounded-[3rem] p-10 mt-20 mb-20">
-                <div class="flex items-center gap-4 mb-10">
-                    <div class="w-12 h-12 bg-slate-900 text-white rounded-2xl flex items-center justify-center shadow-xl">
-                        <i class="fas fa-bolt text-lg"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-xl font-bold">Bilimni sinash</h3>
-                        <p class="text-sm text-slate-400">Keyingi darsga o'tish uchun javobni bering.</p>
-                    </div>
-                </div>
-
-                {% if test_passed %}
-                    <div class="flex items-center gap-5 bg-emerald-50 p-8 rounded-3xl border border-emerald-100 text-emerald-700">
-                        <i class="fas fa-award text-3xl"></i>
-                        <div>
-                            <p class="font-bold text-lg">Muvaffaqiyatli!</p>
-                            <p class="text-sm opacity-80">Siz ushbu bosqichni yakunladingiz, keyingi dars ochildi.</p>
-                        </div>
-                    </div>
-                {% else %}
-                    <form method="POST" class="space-y-4">
-                        {% csrf_token %}
-                        <p class="text-lg font-bold text-slate-800 mb-8">{{ element.quiz.text }}</p>
-                        <div class="grid gap-3">
-                            {% for i in "1234" %}
-                            <label class="group flex items-center gap-4 p-5 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:border-blue-600 transition-all">
-                                <input type="radio" name="option" value="{{ forloop.counter }}" class="w-4 h-4 text-blue-600">
-                                <span class="text-sm font-semibold text-slate-600 group-hover:text-blue-600">
-                                    {% if i == "1" %}{{ element.quiz.option1 }}{% elif i == "2" %}{{ element.quiz.option2 }}{% elif i == "3" %}{{ element.quiz.option3 }}{% else %}{{ element.quiz.option4 }}{% endif %}
+                
+                <div class="space-y-1">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">O'quv rejasi</p>
+                    <div class="sidebar-scroll overflow-y-auto max-h-[calc(100vh-160px)] space-y-2 pr-2">
+                        {% for item in sidebar_items %}
+                        <div class="relative">
+                            <a href="{% if not item.is_locked %}{% url 'adaptive:element_detail' item.url %}{% else %}#{% endif %}" 
+                               class="flex items-center gap-3 p-3 rounded-xl transition-all group
+                               {% if item.is_active %} bg-indigo-50 border border-indigo-100 {% else %} hover:bg-slate-50 {% endif %}
+                               {% if item.is_locked %} opacity-50 cursor-not-allowed {% endif %}">
+                                
+                                <div class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 border-2
+                                    {% if item.is_completed %} bg-emerald-500 border-emerald-500 text-white 
+                                    {% elif item.is_active %} border-indigo-600 text-indigo-600 
+                                    {% else %} border-slate-200 text-slate-400 {% endif %}">
+                                    {% if item.is_completed %}
+                                        <i class="fas fa-check text-[10px]"></i>
+                                    {% elif item.is_locked %}
+                                        <i class="fas fa-lock text-[10px]"></i>
+                                    {% else %}
+                                        <span class="text-xs font-bold">{{ forloop.counter }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <span class="text-sm font-bold truncate {% if item.is_active %} text-indigo-700 {% else %} text-slate-600 {% endif %}">
+                                    {{ item.topic.title }}
                                 </span>
-                            </label>
-                            {% endfor %}
+                            </a>
                         </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </aside>
 
-                        {% if error %}
-                            <p class="text-red-500 text-sm font-bold mt-4 flex items-center gap-2">
-                                <i class="fas fa-info-circle"></i> {{ error }}
-                            </p>
-                        {% endif %}
+        <!-- MAIN CONTENT -->
+        <main class="flex-1 overflow-y-auto relative custom-scroll">
+            <!-- Header -->
+            <header class="sticky top-0 z-30 glass-effect border-b border-slate-100 px-8 py-4 flex items-center justify-between">
+                <a href="{% url 'adaptive:course_list' %}" class="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors">
+                    <i class="fas fa-arrow-left text-xs"></i> Kursga qaytish
+                </a>
+                
+                <div class="flex items-center gap-6">
+                    <div class="hidden md:block text-right">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Umumiy natija</p>
+                        <div class="flex items-center gap-3">
+                            <div class="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="bg-emerald-500 h-full transition-all duration-1000" style="--progress: {{ progress_percent|default:0 }}%; width: var(--progress);"></div>
+                            </div>
+                            <span class="text-xs font-black text-emerald-600">{{ progress_percent|default:0 }}%</span>
+                        </div>
+                    </div>
+                    <div class="h-10 w-[1px] bg-slate-200"></div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-slate-900 rounded-full flex items-center justify-center text-white font-bold">
+                            {{ user.username|first|upper }}
+                        </div>
+                    </div>
+                </div>
+            </header>
 
-                        <button type="submit" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-bold text-sm mt-8 hover:bg-blue-600 transition-all shadow-xl shadow-slate-200">
-                            Javobni tasdiqlash
+            <div class="max-w-4xl mx-auto py-12 px-6">
+                <!-- Lesson Title -->
+                <div class="mb-10">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="px-4 py-1.5 rounded-full text-[11px] font-extrabold border-2 uppercase tracking-tight
+                            {% if element.difficulty == 3 %} level-badge-3 {% elif element.difficulty == 4 %} level-badge-4 {% else %} level-badge-5 {% endif %}">
+                            <i class="fas fa-layer-group mr-1.5"></i> {{ element.get_difficulty_display }}
+                        </span>
+                        <span class="text-slate-300">•</span>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">{{ element.topic.module.title }}</span>
+                    </div>
+                    <h1 class="text-4xl md:text-5xl font-black text-slate-900 leading-[1.1] tracking-tight">
+                        {{ element.topic.title }}
+                    </h1>
+                </div>
+
+                <!-- Video Section -->
+                {% if video_embed %}
+                <div class="mb-12 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-indigo-100 bg-slate-900 aspect-video ring-8 ring-white">
+                    <iframe class="w-full h-full" src="{{ video_embed }}" frameborder="0" allowfullscreen></iframe>
+                </div>
+                {% endif %}
+
+                <!-- Content Article -->
+                <article class="prose prose-slate prose-lg max-w-none mb-20 text-slate-600 leading-relaxed">
+                    {{ element.content|safe }}
+                </article>
+
+                <!-- QUIZ SECTION -->
+                <section class="bg-white rounded-[3rem] p-8 md:p-12 border border-slate-100 shadow-sm relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-8 opacity-5">
+                        <i class="fas fa-question-circle text-9xl"></i>
+                    </div>
+                    
+                    <div class="flex items-center gap-4 mb-10">
+                        <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-indigo-100">
+                            <i class="fas fa-vial text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-black text-slate-900">Bilimni tekshirish</h3>
+                            <p class="text-sm text-slate-500 font-medium">Ushbu darajani yopish uchun kamida 60% ball to'plang.</p>
+                        </div>
+                    </div>
+
+                    <form method="POST" class="space-y-10 relative z-10">
+                        {% csrf_token %}
+                        {% for q in questions %}
+                        <div class="space-y-6">
+                            <h4 class="text-lg font-bold text-slate-800 flex gap-4">
+                                <span class="text-indigo-600">Q{{ forloop.counter }}.</span>
+                                {{ q.text }}
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {% for i in "1234" %}
+                                <label class="relative cursor-pointer group">
+                                    <input type="radio" name="q_{{ q.id }}" value="{{ i }}" class="peer hidden" required>
+                                    <div class="p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl transition-all 
+                                                peer-checked:bg-indigo-600 peer-checked:border-indigo-600 peer-checked:shadow-lg peer-checked:shadow-indigo-100
+                                                group-hover:border-indigo-200">
+                                        <div class="flex items-center justify-between">
+                                            <span class="text-sm font-bold text-slate-600 peer-checked:text-white transition-colors group-hover:text-slate-900 peer-checked:group-hover:text-white">
+                                                {% if i == "1" %}{{ q.option1 }}{% elif i == "2" %}{{ q.option2 }}{% elif i == "3" %}{{ q.option3 }}{% else %}{{ q.option4 }}{% endif %}
+                                            </span>
+                                            <div class="w-5 h-5 rounded-full border-2 border-slate-300 peer-checked:border-white flex items-center justify-center transition-all">
+                                                <div class="w-2 h-2 bg-white rounded-full opacity-0 peer-checked:opacity-100"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        <button type="submit" class="w-full bg-slate-900 text-white py-6 rounded-2xl font-black text-lg hover:bg-indigo-600 transition-all shadow-2xl shadow-slate-200 flex items-center justify-center gap-3">
+                            <span>Natijani tekshirish</span>
+                            <i class="fas fa-chevron-right text-xs"></i>
                         </button>
                     </form>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- ADAPTIVE LOGIC MODAL -->
+    {% if modal_data %}
+    <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md overflow-y-auto">
+        <div class="bg-white w-full max-w-3xl rounded-[3.5rem] p-8 md:p-12 shadow-2xl modal-animate my-auto">
+            
+            <div class="text-center mb-10">
+                <div class="w-24 h-24 mx-auto mb-6 flex items-center justify-center text-5xl bg-slate-50 rounded-full">
+                    {% if modal_data.status == 'success' %} 🏆 {% else %} 🧐 {% endif %}
+                </div>
+                <h2 class="text-4xl font-black mb-2">{{ modal_data.score }}% Natija</h2>
+                <p class="text-slate-500 font-medium">
+                    {% if modal_data.status == 'success' %}
+                        Tabriklaymiz! Siz ushbu bosqichdan muvaffaqiyatli o'tdingiz.
+                    {% else %}
+                        Afsuski, yetarli ball to'play olmadingiz. Tushunmagan joylaringizni yana bir bor takrorlang.
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <!-- SUCCESS STATE -->
+                {% if modal_data.status == 'success' %}
+                    <!-- Option 1: Deepen Knowledge -->
+                    <div class="space-y-4">
+                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Bilimni oshirish</h4>
+                        {% if modal_data.higher_levels %}
+                            {% for hl in modal_data.higher_levels %}
+                            <a href="{% url 'adaptive:element_detail' hl.id %}" class="flex items-center justify-between p-5 bg-slate-50 border-2 border-slate-100 rounded-3xl hover:border-indigo-600 hover:bg-white transition-all group">
+                                <span class="font-bold text-slate-700">{{ hl.get_difficulty_display }}</span>
+                                <i class="fas fa-arrow-up text-indigo-500 group-hover:-translate-y-1 transition-transform"></i>
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="p-6 bg-emerald-50 border border-emerald-100 rounded-3xl text-center">
+                                <p class="text-xs font-bold text-emerald-700 italic">Siz eng yuqori darajani ham yopdingiz! 👑</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Option 2: Move Forward -->
+                    <div class="space-y-4">
+                        <h4 class="text-[10px] font-black text-indigo-500 uppercase tracking-widest px-2">Keyingi mavzuga o'tish</h4>
+                        {% if modal_data.next_topic %}
+                            <p class="text-xs font-bold text-slate-400 px-2 truncate">{{ modal_data.next_topic.title }}</p>
+                            {% for ne in modal_data.next_topic_elements %}
+                            <a href="{% url 'adaptive:element_detail' ne.id %}" class="flex items-center justify-between p-5 bg-indigo-600 text-white rounded-3xl hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all group">
+                                <span class="font-bold text-sm">{{ ne.get_difficulty_display }}</span>
+                                <i class="fas fa-chevron-right text-[10px] group-hover:translate-x-1 transition-transform"></i>
+                            </a>
+                            {% endfor %}
+                        {% else %}
+                            <div class="p-6 bg-slate-50 rounded-3xl text-center">
+                                <p class="text-xs font-bold text-slate-500">Barcha mavzular yakunlandi! 🎉</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                <!-- FAIL STATE -->
+                {% else %}
+                    <div class="md:col-span-2 space-y-4">
+                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Nima qilamiz?</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <a href="{% url 'adaptive:element_detail' element.id %}" class="p-5 bg-slate-900 text-white rounded-3xl text-center font-bold hover:bg-slate-800 transition-all">
+                                Qayta urinish
+                            </a>
+                            {% for ll in modal_data.lower_levels %}
+                            <a href="{% url 'adaptive:element_detail' ll.id %}" class="p-5 bg-white border-2 border-slate-200 rounded-3xl text-center font-bold hover:border-rose-500 transition-all">
+                                Osonroq: {{ ll.get_difficulty_display }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
                 {% endif %}
             </div>
+
+            <div class="mt-12 text-center">
+                <a href="{% url 'adaptive:course_list' %}" class="text-[11px] font-black text-slate-400 hover:text-slate-900 uppercase tracking-widest transition-colors">
+                    O'quv rejasiga qaytish
+                </a>
+            </div>
         </div>
-    </main>
+    </div>
+    {% endif %}
 
 </body>
 </html>

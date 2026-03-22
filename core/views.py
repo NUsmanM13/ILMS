@@ -11,7 +11,7 @@ from django.db.models import Avg
 
 # Modellarni import qilish
 from elementar.models import Lesson as ELesson, Element as EElement, UserProgress as EProgress
-from adaptive.models import Course as ACourse, Element as AElement, Progress as AProgress
+from adaptive.models import Course as ACourse, Element as AElement, UserProgress as AProgress
 from neural.models import AIPath as NPath, Element as NElement, NeuralProgress as NProgress
 from quiz.models import ExamSession
 
@@ -22,11 +22,11 @@ from django.db.models import Avg, Max
 
 # Modellarni import qilish
 from elementar.models import Element as EElement, UserProgress as EProgress
-from adaptive.models import Element as AElement, Progress as AProgress
+from adaptive.models import Element as AElement, UserProgress as AProgress
 from neural.models import Element as NElement, NeuralProgress as NProgress
 from quiz.models import ExamSession
 from practical.models import Submission as PSubmission
-
+from adaptive.models import Topic as ATopic # <-- Bu importni qo'shing
 @login_required
 def dashboard(request):
     user = request.user
@@ -36,8 +36,8 @@ def dashboard(request):
     e_done = EProgress.objects.filter(user=user, is_completed=True).count()
     e_percent = int((e_done / e_total) * 100) if e_total > 0 else 0
 
-    a_total = AElement.objects.count()
-    a_done = AProgress.objects.filter(user=user, completed=True).count()
+    a_total = ATopic.objects.count() # Jami mavzular soni
+    a_done = AProgress.objects.filter(user=user, is_passed=True).count() # Yopilgan mavzular soni
     a_percent = int((a_done / a_total) * 100) if a_total > 0 else 0
 
     n_total = NElement.objects.filter(is_essential=True).count()
@@ -171,8 +171,8 @@ def export_results_docx(request):
     e_percent = int((e_done / e_total) * 100) if e_total > 0 else 0
 
     # Adaptive
-    a_total = AElement.objects.count()
-    a_done = AProgress.objects.filter(user=user, completed=True).count()
+    a_total = ATopic.objects.count() # Jami mavzular soni
+    a_done = AProgress.objects.filter(user=user, is_passed=True).count() # Yopilgan mavzular soni
     a_percent = int((a_done / a_total) * 100) if a_total > 0 else 0
 
     # Neural
@@ -246,8 +246,8 @@ def view_certificate(request):
     e_percent = int((e_done / e_total) * 100) if e_total > 0 else 0
 
     # Adaptive
-    a_total = AElement.objects.count()
-    a_done = AProgress.objects.filter(user=user, completed=True).count()
+    a_total = ATopic.objects.count() # Jami mavzular soni
+    a_done = AProgress.objects.filter(user=user, is_passed=True).count() # Yopilgan mavzular soni
     a_percent = int((a_done / a_total) * 100) if a_total > 0 else 0
 
     # Neural

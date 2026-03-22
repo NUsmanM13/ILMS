@@ -15,11 +15,17 @@
         .element-link.active { background: #ffffff; border-color: #3b82f6; color: #3b82f6; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05); }
         .progress-line { position: absolute; left: 23px; top: 35px; bottom: -15px; width: 2px; background: #e2e8f0; }
         .element-item:last-child .progress-line { display: none; }
+        
+        /* IDE xatoligini to'g'irlash uchun CSS o'zgaruvchi */
+        .progress-bar-fill {
+            --progress-val: 0%;
+            width: var(--progress-val);
+        }
     </style>
 </head>
 <body>
 
-    <!-- Navbar (O'zgarishsiz qoldi) -->
+    <!-- Navbar -->
     <nav class="h-16 border-b border-slate-100 flex items-center justify-between px-6 bg-white z-50 relative">
         <div class="flex items-center gap-4">
             <a href="{% url 'elementar:lesson_list' %}" class="text-slate-400 hover:text-slate-900 transition-colors">
@@ -41,15 +47,15 @@
         <!-- Sidebar -->
         <aside class="w-80 sidebar-scroll shrink-0 hidden lg:block">
             
-            <!-- 1. QO'SHIMCHA: UMUMIY PROGRESS BAR -->
+            <!-- Umumiy Progress Bar -->
             <div class="p-6 border-b border-slate-100 bg-white/50">
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Kurs Progressi</span>
                     <span class="text-[10px] font-bold text-blue-600">{{ current_lesson_percent }}%</span>
                 </div>
                 <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
-                    <div class="h-full bg-blue-600 rounded-full transition-all duration-1000" 
-                         style="--progress: {{ current_lesson_percent|default:0 }}%; width: var(--progress);"></div>
+                    <div class="h-full bg-blue-600 rounded-full transition-all duration-1000 progress-bar-fill" 
+                         style="--progress-val: {{ current_lesson_percent|default:0 }}%;"></div>
                 </div>
             </div>
 
@@ -81,7 +87,7 @@
         <main class="flex-1 content-scroll">
             <div class="max-w-4xl mx-auto py-12 px-8 lg:px-12">
                 
-                <!-- Video Header -->
+                <!-- Video Section -->
                 {% if embed_url %}
                 <div class="rounded-[2rem] overflow-hidden shadow-2xl shadow-blue-100 mb-12 border border-slate-100">
                     <div class="aspect-video">
@@ -90,6 +96,7 @@
                 </div>
                 {% endif %}
 
+                <!-- Content Section -->
                 <article class="prose prose-slate max-w-none mb-16">
                     <h1 class="text-4xl font-black text-slate-900 mb-6">{{ element.title }}</h1>
                     <div class="text-slate-600 leading-relaxed text-lg">
@@ -97,7 +104,7 @@
                     </div>
                 </article>
 
-                <!-- Test Section -->
+                <!-- Quiz Section -->
                 <div class="bg-slate-50 border border-slate-100 rounded-[2.5rem] p-10">
                     <div class="flex items-center gap-4 mb-10">
                         <div class="w-12 h-12 bg-blue-600 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
@@ -105,11 +112,12 @@
                         </div>
                         <div>
                             <h3 class="text-xl font-bold text-slate-900">Bilimni mustahkamlash</h3>
-                            <p class="text-sm text-slate-500">Keyingi bosqichga o'tish uchun javobni belgilang</p>
+                            <p class="text-sm text-slate-500">Mavzuni yakunlash uchun barcha testlarni to'g'ri yeching</p>
                         </div>
                     </div>
 
                     {% if test_passed %}
+                        <!-- Muvaffaqiyatli yakunlangandagi ko'rinish -->
                         <div class="bg-white border border-blue-100 p-8 rounded-3xl flex items-center gap-6">
                             <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl">
                                 <i class="fas fa-award"></i>
@@ -120,7 +128,6 @@
                             </div>
                         </div>
 
-                        <!-- 2. QO'SHIMCHA: KEYINGI DARS TUGMASI -->
                         {% if next_element %}
                         <a href="{% url 'elementar:element_detail' next_element.id %}" 
                            class="mt-10 flex items-center justify-between p-6 bg-slate-900 text-white rounded-3xl hover:bg-blue-600 transition-all group shadow-xl shadow-slate-200">
@@ -135,20 +142,29 @@
                         {% endif %}
 
                     {% else %}
-                        <form method="POST" class="space-y-4">
+                        <!-- Test savollari ko'rinishi -->
+                        <form method="POST" class="space-y-8">
                             {% csrf_token %}
-                            <p class="text-lg font-bold text-slate-800 mb-6">{{ element.quiz.text }}</p>
                             
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {% for i in "1234" %}
-                                <label class="group relative flex items-center p-4 bg-white border border-slate-200 rounded-2xl cursor-pointer hover:border-blue-400 transition-all">
-                                    <input type="radio" name="option" value="{{ forloop.counter }}" class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500">
-                                    <span class="ml-4 text-sm font-medium text-slate-700">
-                                        {% if i == "1" %}{{ element.quiz.option1 }}{% elif i == "2" %}{{ element.quiz.option2 }}{% elif i == "3" %}{{ element.quiz.option3 }}{% else %}{{ element.quiz.option4 }}{% endif %}
-                                    </span>
-                                </label>
-                                {% endfor %}
+                            {% for q in questions %}
+                            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm mb-6">
+                                <p class="text-lg font-bold text-slate-800 mb-6 flex gap-3">
+                                    <span class="text-blue-600">{{ forloop.counter }}.</span>
+                                    {{ q.text }}
+                                </p>
+                                
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {% for i in "1234" %}
+                                    <label class="group relative flex items-center p-4 bg-slate-50 border border-slate-100 rounded-2xl cursor-pointer hover:border-blue-400 transition-all has-[:checked]:bg-blue-50 has-[:checked]:border-blue-400">
+                                        <input type="radio" name="q_{{ q.id }}" value="{{ forloop.counter }}" class="w-4 h-4 text-blue-600 border-slate-300 focus:ring-blue-500" required>
+                                        <span class="ml-4 text-sm font-medium text-slate-700">
+                                            {% if i == "1" %}{{ q.option1 }}{% elif i == "2" %}{{ q.option2 }}{% elif i == "3" %}{{ q.option3 }}{% else %}{{ q.option4 }}{% endif %}
+                                        </span>
+                                    </label>
+                                    {% endfor %}
+                                </div>
                             </div>
+                            {% endfor %}
 
                             {% if error %}
                                 <div class="p-4 bg-red-50 text-red-600 rounded-xl text-sm font-bold mt-4 flex items-center gap-2">
@@ -156,8 +172,9 @@
                                 </div>
                             {% endif %}
 
-                            <button type="submit" class="mt-8 w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-blue-100">
-                                Javobni tekshirish
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-4 rounded-2xl font-bold transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-3">
+                                <span>Barcha javoblarni tekshirish</span>
+                                <i class="fas fa-check-double text-xs"></i>
                             </button>
                         </form>
                     {% endif %}
